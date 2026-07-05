@@ -669,7 +669,25 @@ function playNextEpisode() {
 }
 
 function downloadContent() {
-  alert('Download functionality coming soon!');
+  let downloadUrl;
+  let fileName;
+
+  if (isTV) {
+    const title = showData ? showData.name.replace(/[^a-zA-Z0-9]/g, '_') : 'tv_show';
+    fileName = `${title}_S${currentSeason}_E${currentEpisode}.mp4`;
+    downloadUrl = `https://res.cloudinary.com/project-delphi/video/upload/v1/boomflix/${contentId}-${currentSeason}-${currentEpisode}.mp4`;
+  } else {
+    const title = movieData ? movieData.title.replace(/[^a-zA-Z0-9]/g, '_') : 'movie';
+    fileName = `${title}.mp4`;
+    downloadUrl = `https://res.cloudinary.com/project-delphi/video/upload/v1/boomflix/${contentId}.mp4`;
+  }
+
+  const a = document.createElement('a');
+  a.href = downloadUrl;
+  a.download = fileName;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
 }
 
 function updateNextButton() {
