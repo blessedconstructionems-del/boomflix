@@ -351,8 +351,9 @@ async function loadPage() {
   }
 }
 
+let movieData = null;
 async function loadMoviePage() {
-  const movieData = await API.details(contentId);
+  movieData = await API.details(contentId);
   if (!movieData) {
     document.getElementById('playerInfo').innerHTML = `
       <p style="color:#999;">Failed to load movie data.</p>
