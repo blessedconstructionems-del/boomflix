@@ -322,6 +322,9 @@ const Player = {
             </button>`;
           }).join('')}
         </div>
+        <button onclick="Player.download()" style="background:#f0b429;border:none;color:#111;padding:8px 20px;border-radius:4px;cursor:pointer;font-size:0.85rem;font-weight:600;transition:opacity 0.2s;" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
+          ⬇ Download
+        </button>
       </div>
     `;
   },
