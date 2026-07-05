@@ -239,6 +239,10 @@ const Player = {
           this.buildQualityMenu(data.levels);
         }
 
+        // Show download button
+        const downloadBtn = document.getElementById('bfDownloadBtn');
+        if (downloadBtn) downloadBtn.style.display = 'block';
+
         video.play().catch(() => {});
       });
 
@@ -252,6 +256,9 @@ const Player = {
     } else if (isMP4 || (isHLS && video.canPlayType('application/vnd.apple.mpegurl'))) {
       // Native HLS (Safari) or direct MP4
       video.src = streamUrl;
+      // Show download button for MP4
+      const downloadBtn = document.getElementById('bfDownloadBtn');
+      if (downloadBtn) downloadBtn.style.display = 'block';
       video.addEventListener('canplay', () => {
         this.hideSpinner();
         this.showCenterPlay();
