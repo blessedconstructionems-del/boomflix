@@ -137,7 +137,7 @@ const Player = {
               </button>
 
               <!-- Download -->
-              <button class="bf-btn" id="bfDownloadBtn" title="Download" onclick="Player.download()">
+              <button class="bf-btn" id="bfDownloadBtn" title="Download" onclick="Player.download()" style="display: flex !important;">
                 <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="white" stroke-width="1.5">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                   <polyline points="7 10 12 15 17 10"></polyline>
