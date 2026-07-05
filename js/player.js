@@ -135,6 +135,15 @@ const Player = {
                   <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z" fill="white"/>
                 </svg>
               </button>
+
+              <!-- Download -->
+              <button class="bf-btn" id="bfDownloadBtn" title="Download" onclick="Player.download()">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="white" stroke-width="1.5">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="7 10 12 15 17 10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+              </button>
             </div>
           </div>
         </div>
@@ -640,5 +649,27 @@ const Player = {
     const sec = Math.floor(s % 60);
     if (h > 0) return `${h}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
     return `${m}:${String(sec).padStart(2,'0')}`;
+  },
+
+  download() {
+    let downloadUrl;
+    let fileName;
+
+    if (this.mediaType === 'tv') {
+      const title = showData ? showData.name.replace(/[^a-zA-Z0-9]/g, '_') : 'tv_show';
+      fileName = `${title}_S${this.season}_E${this.episode}.mp4`;
+      downloadUrl = `https://res.cloudinary.com/project-delphi/video/upload/v1/boomflix/${this.movieId}-${this.season}-${this.episode}.mp4`;
+    } else {
+      const title = movieData ? movieData.title.replace(/[^a-zA-Z0-9]/g, '_') : 'movie';
+      fileName = `${title}.mp4`;
+      downloadUrl = `https://res.cloudinary.com/project-delphi/video/upload/v1/boomflix/${this.movieId}.mp4`;
+    }
+
+    const a = document.createElement('a');
+    a.href = downloadUrl;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
   }
 };
