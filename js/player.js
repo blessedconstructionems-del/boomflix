@@ -17,40 +17,19 @@ const Player = {
   // Stream source APIs (tried in order) — disabled, these CORS proxies are unreliable
   STREAM_APIS: [],
 
-  // Fallback embed iframes — ordered by reliability (movies)
-  FALLBACK_EMBEDS: [
-    (id) => `https://player.videasy.net/movie/${id}`,
-    (id) => `https://embed.su/embed/movie/${id}`,
-    (id) => `https://multiembed.mov/?video_id=${id}&tmdb=1`,
-    (id) => `https://autoembed.co/movie/tmdb/${id}`,
-    (id) => `https://vidlink.pro/movie/${id}`,
-    (id) => `https://www.2embed.cc/embed/${id}`,
-    (id) => `https://vidsrc.cc/v2/embed/movie/${id}`,
-    (id) => `https://moviesapi.club/movie/${id}`,
-  ],
-
-  // TV show embed iframes
-  TV_FALLBACK_EMBEDS: [
-    (id, s, e) => `https://player.videasy.net/tv/${id}/${s}/${e}`,
-    (id, s, e) => `https://embed.su/embed/tv/${id}/${s}/${e}`,
-    (id, s, e) => `https://multiembed.mov/?video_id=${id}&tmdb=1&s=${s}&e=${e}`,
-    (id, s, e) => `https://autoembed.co/tv/tmdb/${id}-${s}-${e}`,
-    (id, s, e) => `https://vidlink.pro/tv/${id}/${s}/${e}`,
-    (id, s, e) => `https://vidsrc.cc/v2/embed/tv/${id}/${s}/${e}`,
-    (id, s, e) => `https://moviesapi.club/tv/${id}-${s}-${e}`,
-    (id, s, e) => `https://vidsrc.me/embed/tv/${id}/${s}/${e}`,
-  ],
-
-  getEmbeds() {
-    if (this.mediaType === 'tv') return this.TV_FALLBACK_EMBEDS;
-    return this.FALLBACK_EMBEDS;
+  getServerConfigs() {
+    if (this.mediaType === 'tv') return CONFIG.TV_EMBED_SERVERS;
+    return CONFIG.EMBED_SERVERS;
   },
 
-  getEmbedUrl(embedFn, idx) {
-    if (this.mediaType === 'tv') {
-      return embedFn(this.movieId, this.season, this.episode);
+  getPreferredServerIndex() {
+    try {
+      const preferredId = localStorage.getItem('emilyflixPreferredSource');
+      const idx = this.getServerConfigs().findIndex(server => server.id === preferredId);
+      return idx >= 0 ? idx : 0;
+    } catch (e) {
+      return 0;
     }
-    return embedFn(this.movieId);
   },
 
   async init(movieId, type = 'movie', season = 1, episode = 1) {
@@ -191,7 +170,7 @@ const Player = {
     }
 
     // All APIs failed — fall back to embed iframe
-    this.loadFallbackEmbed(0);
+    this.loadFallbackEmbed();
   },
 
   extractStreamUrl(data) {
@@ -249,7 +228,7 @@ const Player = {
       this.hls.on(Hls.Events.ERROR, (e, data) => {
         if (data.fatal) {
           console.warn('HLS fatal error:', data.type);
-          this.loadFallbackEmbed(0);
+          this.loadFallbackEmbed();
         }
       });
 
@@ -265,13 +244,13 @@ const Player = {
         video.play().catch(() => {});
       }, { once: true });
       video.addEventListener('error', () => {
-        this.loadFallbackEmbed(0);
+        this.loadFallbackEmbed();
       }, { once: true });
       video.load();
 
     } else {
       // Unknown format — fallback
-      this.loadFallbackEmbed(0);
+      this.loadFallbackEmbed();
     }
 
     // Build server bar with fallback options
@@ -283,8 +262,9 @@ const Player = {
 
   loadFallbackEmbed(idx) {
     const wrapper = document.getElementById('playerWrapper');
-    const embeds = this.getEmbeds();
-    if (idx >= embeds.length) {
+    const serverConfigs = this.getServerConfigs();
+    if (!Number.isInteger(idx)) idx = this.getPreferredServerIndex();
+    if (idx < 0 || idx >= serverConfigs.length) {
       this.showError('No streams available right now. Try again later.');
       return;
     }
@@ -292,7 +272,8 @@ const Player = {
     this._currentEmbedIdx = idx;
 
     // Build player-frame URL with TV params if needed
-    let playerUrl = `player-frame.html?id=${this.movieId}&s=${idx}`;
+    const selectedServer = serverConfigs[idx];
+    let playerUrl = `player-frame.html?v=4&id=${encodeURIComponent(this.movieId)}&source=${encodeURIComponent(selectedServer.id)}`;
     if (this.mediaType === 'tv') {
       playerUrl += `&type=tv&season=${this.season}&episode=${this.episode}`;
     }
@@ -312,13 +293,13 @@ const Player = {
         </div>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:center;">
           <span style="color:#aaa;font-size:0.75rem;">Server:</span>
-          ${embeds.map((_, i) => {
-            let srvUrl = `player-frame.html?id=${this.movieId}&s=${i}`;
+          ${serverConfigs.map((server, i) => {
+            let srvUrl = `player-frame.html?v=4&id=${encodeURIComponent(this.movieId)}&source=${encodeURIComponent(server.id)}`;
             if (this.mediaType === 'tv') srvUrl += `&type=tv&season=${this.season}&episode=${this.episode}`;
             return `
             <button onclick="window.open('${srvUrl}','_blank')"
               style="background:${i===idx?'#f0b429':'rgba(255,255,255,0.15)'};border:none;color:white;padding:4px 12px;border-radius:4px;cursor:pointer;font-size:0.75rem;">
-              ${i+1}
+              ${server.name}
             </button>`;
           }).join('')}
         </div>
@@ -333,11 +314,11 @@ const Player = {
     const bar = document.getElementById('bfServerBar');
     const btns = document.getElementById('bfServerBtns');
     if (!bar || !btns) return;
-    const embeds = this.getEmbeds();
+    const serverConfigs = this.getServerConfigs();
     btns.innerHTML = `
       <button class="bf-srv active" onclick="">Native</button>
-      ${embeds.map((_, i) => `
-        <button class="bf-srv" onclick="Player.loadFallbackEmbed(${i})">Server ${i+1}</button>
+      ${serverConfigs.map((server, i) => `
+        <button class="bf-srv" onclick="Player.loadFallbackEmbed(${i})">${server.name}</button>
       `).join('')}
     `;
     bar.style.display = 'flex';
@@ -616,40 +597,14 @@ const Player = {
     if (errMsg) errMsg.textContent = msg;
     this.hideSpinner();
     if (errActions) {
-      const embeds = this.getEmbeds();
-      errActions.innerHTML = embeds.map((_, i) => `
+      const serverConfigs = this.getServerConfigs();
+      errActions.innerHTML = serverConfigs.map((server, i) => `
         <button onclick="Player.loadFallbackEmbed(${i})"
           style="background:rgba(255,255,255,0.15);border:none;color:white;padding:8px 20px;border-radius:6px;cursor:pointer;font-size:0.85rem;margin:4px;">
-          Try Server ${i+1}
+          Try ${server.name}
         </button>
       `).join('');
     }
-  },
-
-  _checkEmbedHealth(idx) {
-    // Auto-skip to next server after 5s if iframe appears blocked/empty
-    setTimeout(() => {
-      try {
-        const frame = document.getElementById('bfEmbedFrame');
-        if (!frame) return;
-        // If we're still on this embed index and user hasn't manually switched
-        if (this._currentEmbedIdx === idx) {
-          // Try to detect sandbox error by checking if iframe body is tiny (error page)
-          try {
-            const doc = frame.contentDocument || frame.contentWindow?.document;
-            const text = doc?.body?.innerText || '';
-            if (text.includes('Sandbox') || text.includes('sandbox') || text.includes('blocked')) {
-              console.warn(`Server ${idx+1} blocked, trying next...`);
-              if (idx + 1 < this.FALLBACK_EMBEDS.length) {
-                this.loadFallbackEmbed(idx + 1);
-              }
-            }
-          } catch(e) {
-            // Cross-origin — can't read, that's normal and means it loaded
-          }
-        }
-      } catch(e) {}
-    }, 4000);
   },
 
   fmtTime(s) {
