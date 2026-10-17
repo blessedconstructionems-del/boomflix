@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My List — EmilyFlix</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>">
+  <style>
+    .mylist-header {
+      padding: 100px 4% 20px;
+    }
+    .mylist-header h1 {
+      font-size: 2.2rem;
+      font-weight: 700;
+    }
+    .mylist-header p {
+      color: #999;
+      margin-top: 6px;
+      font-size: 0.95rem;
+    }
+    .mylist-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 16px;
+      padding: 10px 4% 60px;
+    }
+    .mylist-empty {
+      text-align: center;
+      padding: 80px 20px;
+      color: #888;
+    }
+    .mylist-empty h2 {
+      font-size: 1.5rem;
+      margin-bottom: 12px;
+      color: #ccc;
+    }
+    .mylist-empty p { font-size: 1rem; }
+    .mylist-empty a {
+      display: inline-block;
+      margin-top: 20px;
+      padding: 10px 28px;
+      background: var(--red);
+      color: #fff;
+      border-radius: 4px;
+      text-decoration: none;
+      font-weight: 700;
+    }
+    @media (max-width: 600px) {
+      .mylist-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
+      .mylist-header h1 { font-size: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar navbar-gradient solid" id="navbar">
+  <div class="navbar-left">
+    <a href="index.html" class="logo">EmilyFlix</a>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="tv.html">TV Shows</a></li>
+      <li><a href="movies.html">Movies</a></li>
+      <li><a href="games.html">Games</a></li>
+      <li><a href="pc-games.html">PC Games</a></li>
+      <li><a href="movies.html?genre=28">New &amp; Popular</a></li>
+      <li><a href="mylist.html" class="active">My List</a></li>
+    </ul>
+    <span class="tagline">Made for a mother who needs a break — only 1 ad</span>
+  </div>
+  <div class="navbar-right">
+    <button class="search-btn" id="searchToggle" title="Search">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/></svg>
+    </button>
+    <button class="nav-icon-btn" title="Notifications">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2zm-2 1H8v-6c0-2.48 1.51-4.5 4-4.5s4 2.02 4 4.5v6z"/></svg>
+      <span class="notification-dot"></span>
+    </button>
+    <div class="profile-avatar" title="Emily">E</div>
+  </div>
+</nav>
+
+<!-- SEARCH OVERLAY -->
+<div class="search-overlay" id="searchOverlay">
+  <button class="search-close" id="searchClose">&#10005;</button>
+  <div class="search-box">
+    <span class="search-icon-inside">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2.5"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/></svg>
+    </span>
+    <input type="text" id="searchInput" placeholder="Titles, people, genres" autocomplete="off">
+  </div>
+  <div class="search-results-grid" id="searchResults"></div>
+</div>
+
+<!-- MY LIST CONTENT -->
+<div class="mylist-header">
+  <h1>My List</h1>
+  <p id="listCount"></p>
+</div>
+<div id="myListContent"></div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal"></div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-social">
+    <a href="#" title="Facebook">&#xf09a;</a>
+    <a href="#" title="Instagram">&#xf16d;</a>
+    <a href="#" title="Twitter">&#xf099;</a>
+    <a href="#" title="YouTube">&#xf167;</a>
+  </div>
+  <div class="footer-links">
+    <a href="#">Audio Description</a>
+    <a href="#">Help Centre</a>
+    <a href="#">Gift Cards</a>
+    <a href="#">Media Centre</a>
+    <a href="#">Terms of Use</a>
+    <a href="#">Privacy</a>
+    <a href="#">Contact Us</a>
+  </div>
+  <div class="footer-bottom">
+    <p>&copy; 2025 EmilyFlix. Movie data provided by TMDB.</p>
+  </div>
+</footer>
+
+<script src="js/config.js"></script>
+<script src="js/api.js?v=2"></script>
+<script src="js/ui.js?v=2"></script>
+<script>
+UI.initNavbar();
+Modal.init();
+
+function renderMyList() {
+  const items = MyList.getAll();
+  const container = document.getElementById('myListContent');
+  const countEl = document.getElementById('listCount');
+
+  if (items.length === 0) {
+    countEl.textContent = '';
+    container.innerHTML = `
+      <div class="mylist-empty">
+        <h2>Your list is empty</h2>
+        <p>Add movies and TV shows to your list by clicking the + button on any title.</p>
+        <a href="index.html">Browse EmilyFlix</a>
+      </div>
+    `;
+    return;
+  }
+
+  countEl.textContent = `${items.length} title${items.length !== 1 ? 's' : ''}`;
+  container.innerHTML = '';
+  const grid = document.createElement('div');
+  grid.className = 'mylist-grid';
+
+  items.forEach(item => {
+    grid.appendChild(UI.card(item));
+  });
+
+  container.appendChild(grid);
+}
+
+renderMyList();
+
+// Listen for storage changes (if user removes from another tab)
+window.addEventListener('storage', (e) => {
+  if (e.key === 'emilyflix_mylist') renderMyList();
+});
+
+// ===== SEARCH =====
+let searchTimer = null;
+
+document.getElementById('searchToggle').addEventListener('click', () => {
+  document.getElementById('searchOverlay').classList.add('active');
+  document.getElementById('searchInput').focus();
+});
+
+document.getElementById('searchClose').addEventListener('click', () => {
+  document.getElementById('searchOverlay').classList.remove('active');
+});
+
+document.getElementById('searchInput').addEventListener('input', (e) => {
+  clearTimeout(searchTimer);
+  const q = e.target.value.trim();
+  if (!q) {
+    document.getElementById('searchResults').innerHTML = '';
+    return;
+  }
+  searchTimer = setTimeout(() => doSearch(q), 400);
+});
+
+async function doSearch(query) {
+  const container = document.getElementById('searchResults');
+  container.innerHTML = '<div class="spinner" style="margin:20px auto;grid-column:1/-1;"></div>';
+  const data = await API.searchMulti(query);
+  container.innerHTML = '';
+  if (!data || !data.results || data.results.length === 0) {
+    container.innerHTML = '<p style="color:#999;text-align:center;grid-column:1/-1;padding:20px;">No results found.</p>';
+    return;
+  }
+  data.results.slice(0, 18).forEach(item => {
+    container.appendChild(UI.card(item));
+  });
+}
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === '/' && !e.target.matches('input, textarea')) {
+    e.preventDefault();
+    document.getElementById('searchOverlay').classList.add('active');
+    document.getElementById('searchInput').focus();
+  }
+});
+</script>
+</body>
+</html>
